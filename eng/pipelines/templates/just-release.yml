@@ -1,0 +1,117 @@
+parameters:
+- name: OriginalBuildId
+  type: string
+- name: Version
+  type: string
+
+resources:
+  repositories:
+  - repository: azure-sdk-build-tools
+    type: git
+    name: internal/azure-sdk-build-tools
+    ref: refs/tags/azure-sdk-build-tools_20250307.1
+    
+extends:
+  template: /eng/pipelines/templates/1es-redirect.yml
+  parameters:
+    autoBaseline: false
+    stages:
+    - stage: Release
+      pool:
+        name: $(LINUXPOOL)
+        image: $(LINUXVMIMAGE)
+        os: linux
+      variables:
+      - template: /eng/pipelines/templates/variables/image.yml
+      - template: /eng/pipelines/templates/variables/globals.yml
+      jobs:
+      - job: TagRepository
+        displayName: "Create release tag"
+        condition: and(succeeded(), ne(variables['Skip.TagRepository'], 'true'))
+        steps:
+        - checkout: self
+
+        - task: DownloadPipelineArtifact@2
+          inputs:
+            artifact: $(PipelineArtifactName)_packed
+            buildType: specific
+            project: internal
+            definition: "7571"
+            buildVersionToDownload: specific
+            buildId: ${{ parameters.OriginalBuildId }}
+            targetPath: $(Pipeline.Workspace)/$(PipelineArtifactName)_packed
+          displayName: Download $(PipelineArtifactName)_packed
+
+        - template: /eng/common/pipelines/templates/steps/retain-run.yml
+
+        - pwsh: |
+            gh release create `
+              "${{ parameters.Version }}" `
+              --title "${{ parameters.Version }}"
+
+            gh release upload ${{ parameters.Version }} $(Pipeline.Workspace)/$(PipelineArtifactName)_packed/platform/*.tgz
+            gh release upload ${{ parameters.Version }} $(Pipeline.Workspace)/$(PipelineArtifactName)_packed/wrapper/*.tgz
+          displayName: Create GitHub Release and upload artifacts
+          env:
+            GH_TOKEN: $(azuresdk-github-pat)
+
+      - deployment: Publish
+        displayName: "Publish to npmjs.com"
+        templateContext:
+          type: releaseJob
+          isProduction: true
+          inputs:
+          - input: pipelineArtifact
+            artifactName: $(PipelineArtifactName)_packed
+            targetPath: $(Pipeline.Workspace)/drop
+            buildType: specific
+            project: internal
+            definition: "7571"
+            buildVersionToDownload: specific
+            buildId: ${{ parameters.OriginalBuildId }}
+
+        environment: package-publish
+        timeoutInMinutes: 120
+        dependsOn: TagRepository
+        pool:
+          name: azsdk-pool-mms-ubuntu-2204-general
+          image: azsdk-pool-mms-ubuntu-2204-1espt
+          os: linux
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+              - task: EsrpRelease@9
+                displayName: Publish platform packages to npmjs.com
+                inputs:
+                  ConnectedServiceName: 'Azure SDK PME Managed Identity'
+                  ClientId: '5f81938c-2544-4f1f-9251-dd9de5b8a81b'
+                  DomainTenantId: '975f013f-7f24-47e8-a7d3-abc4752bf346'
+                  Usemanagedidentity: true
+                  KeyVaultName: 'kv-azuresdk-codesign'
+                  SignCertName: 'azure-sdk-esrp-release-certificate'
+                  Intent: 'PackageDistribution'
+                  ContentType: 'npm'
+                  FolderLocation: $(Pipeline.Workspace)/drop/platform
+                  Owners: ${{ coalesce(variables['Build.RequestedForEmail'], 'azuresdk@microsoft.com') }}
+                  Approvers: ${{ coalesce(variables['Build.RequestedForEmail'], 'azuresdk@microsoft.com') }}
+                  ServiceEndpointUrl: 'https://api.esrp.microsoft.com'
+                  MainPublisher: 'ESRPRELPACMANTEST'
+                  productstate: latest
+              - task: EsrpRelease@9
+                displayName: Publish wrapper package to npmjs.com
+                inputs:
+                  ConnectedServiceName: 'Azure SDK PME Managed Identity'
+                  ClientId: '5f81938c-2544-4f1f-9251-dd9de5b8a81b'
+                  DomainTenantId: '975f013f-7f24-47e8-a7d3-abc4752bf346'
+                  Usemanagedidentity: true
+                  KeyVaultName: 'kv-azuresdk-codesign'
+                  SignCertName: 'azure-sdk-esrp-release-certificate'
+                  Intent: 'PackageDistribution'
+                  ContentType: 'npm'
+                  FolderLocation: $(Pipeline.Workspace)/drop/wrapper
+                  Owners: ${{ coalesce(variables['Build.RequestedForEmail'], 'azuresdk@microsoft.com') }}
+                  Approvers: ${{ coalesce(variables['Build.RequestedForEmail'], 'azuresdk@microsoft.com') }}
+                  ServiceEndpointUrl: 'https://api.esrp.microsoft.com'
+                  MainPublisher: 'ESRPRELPACMANTEST'
+                  productstate: latest

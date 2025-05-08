@@ -25,7 +25,7 @@ public sealed class QueryCommand : BaseQueryCommand<QueryArguments>
     protected override string GetCommandDescription() =>
         """
         Execute a KQL against items in a Kusto cluster. Requires cluster-uri, database, and query.
-        Requires `cluster-uri` (or `cluster-name`), `database-name`, and `query-text`. 
+        Requires `cluster-uri` (or `cluster-name`), `database-name`, and `query`. 
         Results are returned as a JSON array of documents, for example: `[{'Column1': val1, 'Column2': val2}, ...]`.
         """;
 

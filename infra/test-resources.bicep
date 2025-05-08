@@ -65,3 +65,13 @@ module keyvault 'services/keyvault.bicep' = {
     testApplicationOid: testApplicationOid
   }
 }
+
+module kusto 'services/kusto.bicep' = {
+  name: '${deploymentName}-kusto'
+  params: {
+    baseName: baseName
+    location: location
+    tenantId: tenantId
+    testApplicationOid: testApplicationOid
+  }
+}

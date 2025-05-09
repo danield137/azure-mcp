@@ -43,7 +43,7 @@ public class KustoCommandTests(McpClientFixture mcpClient, LiveTestSettingsFixtu
             TestDatabaseName,
             ".set-or-replace ToDoList <| datatable (Title: string, IsCompleted: bool) [' Hello World!', false]");
         resp.Consume();
-        
+
     }
 
     [Fact]

@@ -6,8 +6,6 @@ using System.Reflection;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using AzureMcp.Commands.Cosmos;
-using AzureMcp.Commands.Kusto;
 using AzureMcp.Commands.Server;
 using AzureMcp.Commands.Storage.Blob;
 using AzureMcp.Commands.Subscription;
@@ -86,6 +84,7 @@ public class CommandFactory
         RegisterSubscriptionCommands();
         RegisterGroupCommands();
         RegisterMcpServerCommands();
+        RegisterServiceBusCommands();
     }
 
     private void RegisterCosmosCommands()
@@ -323,6 +322,21 @@ public class CommandFactory
         var startServer = new ServiceStartCommand();
         mcpServer.AddCommand("start", startServer);
 
+    }
+
+    private void RegisterServiceBusCommands()
+    {
+        var serviceBus = new CommandGroup("servicebus", "Service Bus operations - Commands for managing Azure Service Bus resources");
+        _rootGroup.AddSubGroup(serviceBus);
+
+        var queue = new CommandGroup("queue", "Queue operations - Commands for using Azure Service Bus queues.");
+        queue.AddCommand("peek", new ServiceBus.Queue.QueuePeekCommand());
+
+        var topic = new CommandGroup("topic", "Topic and Subscription operations - Commands for using Azure Service Bus topics and subscriptions.");
+        topic.AddCommand("peek", new ServiceBus.Topic.SubscriptionPeekCommand());
+
+        serviceBus.AddSubGroup(queue);
+        serviceBus.AddSubGroup(topic);
     }
 
     private void ConfigureCommands(CommandGroup group)

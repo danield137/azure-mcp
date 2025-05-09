@@ -42,7 +42,7 @@ public sealed class QueryCommandTests
     {
         var command = new QueryCommand(_logger);
         var arguments = command.GetArguments();
-        
+
         Assert.Equal(12, arguments!.Count());
     }
 

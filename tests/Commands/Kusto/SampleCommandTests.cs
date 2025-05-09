@@ -42,7 +42,7 @@ public sealed class SampleCommandTests
     {
         var command = new SampleCommand(_logger);
         var arguments = command.GetArguments();
-        
+
         Assert.Equal(12, arguments!.Count());
     }
 

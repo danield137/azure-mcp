@@ -252,7 +252,7 @@ public sealed class KustoService(
         ArgumentException.ThrowIfNullOrEmpty(clusterName, nameof(clusterName));
         ArgumentException.ThrowIfNullOrEmpty(databaseName, nameof(databaseName));
         ArgumentException.ThrowIfNullOrEmpty(query, nameof(query));
-        
+
 
         string clusterUri = await GetClusterUri(subscriptionId, clusterName, tenant, retryPolicy);
 

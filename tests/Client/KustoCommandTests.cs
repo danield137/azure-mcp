@@ -12,7 +12,7 @@ public class KustoCommandTests(McpClientFixture mcpClient, LiveTestSettingsFixtu
     : CommandTestsBase(mcpClient, liveTestSettings, output),
     IClassFixture<McpClientFixture>, IClassFixture<LiveTestSettingsFixture>
 {
-    private const string TestDatabaseName =  "ToDoLists";
+    private const string TestDatabaseName = "ToDoLists";
 
     [Fact]
     [Trait("Category", "Live")]

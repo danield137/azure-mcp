@@ -19,7 +19,7 @@ resource kustoCluster 'Microsoft.Kusto/clusters@2024-04-13' = {
   name: baseName
   location: location
   sku: {
-    name: 'Standard_E4ads_v5'
+    name: 'Standard_E2ads_v5'
     tier: 'Standard'
     capacity: 2
   }
@@ -34,15 +34,5 @@ resource kustoCluster 'Microsoft.Kusto/clusters@2024-04-13' = {
     location: location
     name: 'ToDoLists'
     kind: 'ReadWrite'
-  }
-
-  resource kustoPrincipals 'principalAssignments' = {
-    name: guid(kustoCluster.id, testApplicationOid)
-    properties: {
-      principalId: testApplicationOid
-      principalType: 'App'
-      role: 'AllDatabasesAdmin'
-      tenantId: tenantId
-    }
   }
 }

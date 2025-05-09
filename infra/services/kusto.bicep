@@ -50,7 +50,7 @@ resource kustoCluster 'Microsoft.Kusto/clusters@2024-04-13' = {
     properties: {
       principalId: testApplicationOid
       principalType: 'App'
-      role: 'AllDatabaseAdmin'
+      role: 'AllDatabasesAdmin'
       tenantId: tenantId
     }
   }

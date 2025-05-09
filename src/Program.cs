@@ -15,6 +15,7 @@ using AzureMcp.Services.Azure.Monitor;
 using AzureMcp.Services.Azure.Postgres;
 using AzureMcp.Services.Azure.ResourceGroup;
 using AzureMcp.Services.Azure.Search;
+using AzureMcp.Services.Azure.ServiceBus;
 using AzureMcp.Services.Azure.Storage;
 using AzureMcp.Services.Azure.Subscription;
 using AzureMcp.Services.Azure.Tenant;
@@ -76,6 +77,7 @@ internal class Program
         services.AddSingleton<ISearchService, SearchService>();
         services.AddSingleton<IPostgresService, PostgresService>();
         services.AddSingleton<IKeyVaultService, KeyVaultService>();
+        services.AddSingleton<IServiceBusService, ServiceBusService>();
         services.AddSingleton<CommandFactory>();
     }
 }

@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Support for Azure Service Bus Queue. https://github.com/Azure/azure-mcp/pull/144
+
 ### Breaking Changes
 
 ### Bugs Fixed

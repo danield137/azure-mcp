@@ -66,6 +66,16 @@ module keyvault 'services/keyvault.bicep' = {
   }
 }
 
+module servicebus 'services/servicebus.bicep' = {
+  name: '${deploymentName}-servicebus'
+  params: {
+    baseName: baseName
+    location: location
+    tenantId: tenantId
+    testApplicationOid: testApplicationOid
+  }
+}
+
 module kusto 'services/kusto.bicep' = {
   name: '${deploymentName}-kusto'
   params: {

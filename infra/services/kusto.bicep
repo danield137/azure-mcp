@@ -19,7 +19,7 @@ resource kustoCluster 'Microsoft.Kusto/clusters@2024-04-13' = {
   name: baseName
   location: location
   sku: {
-    name: 'Standard_D2_v2'
+    name: 'Standard_D12_v2'
     tier: 'Standard'
     capacity: 2
   }
@@ -28,41 +28,30 @@ resource kustoCluster 'Microsoft.Kusto/clusters@2024-04-13' = {
   }
   properties: {
     enableStreamingIngest: true
-    optimizedAutoscale: {
-      isEnabled: false
-      minimum: 1
-      maximum: 1
-      version: 1
+  }
+
+  resource kustoDatabase 'databases' = {
+    location: location
+    name: 'ToDoLists'
+    kind: 'ReadWrite'
+  
+
+    resource kustoScript 'scripts' = {
+      name: 'init-data'
+      properties: {
+        scriptContent: '.set-or-append ToDoList <| datatable(item: string) ["Hello World!"]'
+        continueOnErrors: false
+      }
     }
   }
-}
 
-resource kustoDatabase 'Microsoft.Kusto/clusters/databases@2024-04-13' = {
-  parent: kustoCluster
-  name: 'ToDoLists'
-  kind: 'ReadWrite'
-}
-
-resource kustoPrincipalAssignment 'Microsoft.Kusto/clusters/principalAssignments@2024-04-13' = {
-  parent: kustoCluster
-  name: guid(kustoCluster.id, testApplicationOid)
-  properties: {
-    principalId: testApplicationOid
-    principalType: 'App'
-    role: 'AllDatabaseAdmin'
-    tenantId: tenantId
-  }
-}
-
-
-@description('The KQL script to initialize the test data.')
-param initScript string = '.set-or-append ToDoList <| datatable(item: string) ["Hello World!"]'
-
-resource kustoScript 'Microsoft.Kusto/clusters/databases/scripts@2024-04-13' = {
-  parent: kustoDatabase
-  name: 'init-data'
-  properties: {
-    scriptContent: initScript
-    continueOnErrors: false
+  resource kustoPrincipals 'principalAssignments' = {
+    name: guid(kustoCluster.id, testApplicationOid)
+    properties: {
+      principalId: testApplicationOid
+      principalType: 'App'
+      role: 'AllDatabaseAdmin'
+      tenantId: tenantId
+    }
   }
 }

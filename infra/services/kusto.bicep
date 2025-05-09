@@ -19,7 +19,7 @@ resource kustoCluster 'Microsoft.Kusto/clusters@2024-04-13' = {
   name: baseName
   location: location
   sku: {
-    name: 'Standard_D12_v2'
+    name: 'Standard_E4ads_v5'
     tier: 'Standard'
     capacity: 2
   }
@@ -34,15 +34,6 @@ resource kustoCluster 'Microsoft.Kusto/clusters@2024-04-13' = {
     location: location
     name: 'ToDoLists'
     kind: 'ReadWrite'
-  
-
-    resource kustoScript 'scripts' = {
-      name: 'init-data'
-      properties: {
-        scriptContent: '.set-or-append ToDoList <| datatable(item: string) ["Hello World!"]'
-        continueOnErrors: false
-      }
-    }
   }
 
   resource kustoPrincipals 'principalAssignments' = {

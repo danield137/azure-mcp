@@ -2,17 +2,49 @@
 // Licensed under the MIT License.
 
 using System.Text.Json;
+using Azure.Identity;
 using AzureMcp.Tests.Client.Helpers;
+using Kusto.Cloud.Platform.Data;
+using Kusto.Data;
+using Kusto.Data.Net.Client;
 using ModelContextProtocol.Client;
 using Xunit;
 
 namespace AzureMcp.Tests.Client;
 
+
 public class KustoCommandTests(McpClientFixture mcpClient, LiveTestSettingsFixture liveTestSettings, ITestOutputHelper output)
     : CommandTestsBase(mcpClient, liveTestSettings, output),
-    IClassFixture<McpClientFixture>, IClassFixture<LiveTestSettingsFixture>
+    IClassFixture<McpClientFixture>, IClassFixture<LiveTestSettingsFixture>, IAsyncLifetime
 {
     private const string TestDatabaseName = "ToDoLists";
+
+    public ValueTask DisposeAsync()
+    {
+        return ValueTask.CompletedTask;
+    }
+
+    public async ValueTask InitializeAsync()
+    {
+        var credentials = new DefaultAzureCredential();
+        await Client.PingAsync();
+        var clusterInfo = await CallToolAsync(
+            "azmcp-kusto-cluster-get",
+            new()
+            {
+                { "subscription", Settings.SubscriptionId },
+                { "cluster-name", Settings.ResourceBaseName }
+            });
+        var clusterUri = clusterInfo.AssertProperty("cluster").AssertProperty("clusterUri").GetString();
+        var kcsb = new KustoConnectionStringBuilder(clusterUri)
+            .WithAadAzureTokenCredentialsAuthentication(credentials);
+        using var adminClient = KustoClientFactory.CreateCslAdminProvider(kcsb);
+        using var resp = await adminClient.ExecuteControlCommandAsync(
+            TestDatabaseName,
+            ".set-or-replace ToDoList <| datatable (Title: string, IsCompleted: bool) [' Hello World!', false]");
+        resp.Consume();
+        
+    }
 
     [Fact]
     [Trait("Category", "Live")]

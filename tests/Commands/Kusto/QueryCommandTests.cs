@@ -82,9 +82,9 @@ public sealed class QueryCommandTests
         var json = JsonSerializer.Serialize(response.Results);
         var result = JsonSerializer.Deserialize<QueryResult>(json);
         Assert.NotNull(result);
-        Assert.NotNull(result.Results);
-        Assert.Single(result.Results);
-        var actualJson = result.Results[0].ToString();
+        Assert.NotNull(result.Items);
+        Assert.Single(result.Items);
+        var actualJson = result.Items[0].ToString();
         var expectedJsonText = expectedJson[0].ToString();
         Assert.Equal(expectedJsonText, actualJson);
     }
@@ -170,7 +170,7 @@ public sealed class QueryCommandTests
 
     private sealed class QueryResult
     {
-        [JsonPropertyName("results")]
-        public List<System.Text.Json.JsonElement> Results { get; set; } = new();
+        [JsonPropertyName("items")]
+        public List<System.Text.Json.JsonElement> Items { get; set; } = new();
     }
 }

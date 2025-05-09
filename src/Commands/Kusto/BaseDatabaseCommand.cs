@@ -21,6 +21,18 @@ public abstract class BaseDatabaseCommand<
         command.AddOption(_databaseOption);
     }
 
+    private static ArgumentBuilder<BaseDatabaseArguments> CreateDatabaseArgument() =>
+        ArgumentBuilder<BaseDatabaseArguments>
+            .Create(ArgumentDefinitions.Kusto.Database.Name, ArgumentDefinitions.Kusto.Database.Description)
+            .WithValueAccessor(args => args.Database ?? string.Empty)
+            .WithIsRequired(true);
+
+    protected override void RegisterArguments()
+    {
+        base.RegisterArguments();
+        AddArgument(CreateDatabaseArgument());
+    }
+
     protected override TArgs BindArguments(ParseResult parseResult)
     {
         var args = base.BindArguments(parseResult);

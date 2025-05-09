@@ -3,6 +3,7 @@
 
 using System.Text.Json;
 using AzureMcp.Tests.Client.Helpers;
+using ModelContextProtocol.Client;
 using Xunit;
 
 namespace AzureMcp.Tests.Client;
@@ -12,22 +13,23 @@ public class KustoCommandTests(McpClientFixture mcpClient, LiveTestSettingsFixtu
     IClassFixture<McpClientFixture>, IClassFixture<LiveTestSettingsFixture>
 {
     private const string TestDatabaseName =  "ToDoLists";
-    // [Fact]
-    // [Trait("Category", "Live")]
-    // public async Task Should_list_databases_in_cluster()
-    // {
-    //     var result = await CallToolAsync(
-    //         "azmcp-kusto-database-list",
-    //         new()
-    //         {
-    //             { "subscription", Settings.SubscriptionId },
-    //             { "cluster-name", Settings.ResourceBaseName }
-    //         });
 
-    //     var databasesArray = result.AssertProperty("databases");
-    //     Assert.Equal(JsonValueKind.Array, databasesArray.ValueKind);
-    //     Assert.NotEmpty(databasesArray.EnumerateArray());
-    // }
+    [Fact]
+    [Trait("Category", "Live")]
+    public async Task Should_list_databases_in_cluster()
+    {
+        var result = await CallToolAsync(
+            "azmcp-kusto-database-list",
+            new()
+            {
+                { "subscription", Settings.SubscriptionId },
+                { "cluster-name", Settings.ResourceBaseName }
+            });
+
+        var databasesArray = result.AssertProperty("databases");
+        Assert.Equal(JsonValueKind.Array, databasesArray.ValueKind);
+        Assert.NotEmpty(databasesArray.EnumerateArray());
+    }
 
     [Fact]
     [Trait("Category", "Live")]
@@ -47,22 +49,22 @@ public class KustoCommandTests(McpClientFixture mcpClient, LiveTestSettingsFixtu
         Assert.NotEmpty(tablesArray.EnumerateArray());
     }
 
-    // [Fact]
-    // [Trait("Category", "Live")]
-    // public async Task Should_query_kusto()
-    // {
-    //     var result = await CallToolAsync(
-    //         "azmcp-kusto-query",
-    //         new()
-    //         {
-    //             { "subscription", Settings.SubscriptionId },
-    //             { "cluster-name", Settings.ResourceBaseName },
-    //             { "database-name", TestDatabaseName },
-    //             { "query", "ToDoList | take 1" }
-    //         });
+    [Fact]
+    [Trait("Category", "Live")]
+    public async Task Should_query_kusto()
+    {
+        var result = await CallToolAsync(
+            "azmcp-kusto-query",
+            new()
+            {
+                { "subscription", Settings.SubscriptionId },
+                { "cluster-name", Settings.ResourceBaseName },
+                { "database-name", TestDatabaseName },
+                { "query", "ToDoList | take 1" }
+            });
 
-    //     var itemsArray = result.AssertProperty("items");
-    //     Assert.Equal(JsonValueKind.Array, itemsArray.ValueKind);
-    //     Assert.NotEmpty(itemsArray.EnumerateArray());
-    // }
+        var itemsArray = result.AssertProperty("items");
+        Assert.Equal(JsonValueKind.Array, itemsArray.ValueKind);
+        Assert.NotEmpty(itemsArray.EnumerateArray());
+    }
 }

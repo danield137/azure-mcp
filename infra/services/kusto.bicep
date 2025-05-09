@@ -14,7 +14,6 @@ param tenantId string = '72f988bf-86f1-41af-91ab-2d7cd011db47'
 @description('The client OID to grant access to test resources.')
 param testApplicationOid string
 
-var kustoContributorRoleId = '00000000-0000-0000-0000-000000000002' // Built-in Contributor role
 
 resource kustoCluster 'Microsoft.Kusto/clusters@2024-04-13' = {
   name: baseName
@@ -44,14 +43,17 @@ resource kustoDatabase 'Microsoft.Kusto/clusters/databases@2024-04-13' = {
   kind: 'ReadWrite'
 }
 
-resource kustoPrincipalAssignment 'Microsoft.Authorization/roleAssignments@2020-04-01-preview' = {
-  name: guid(kustoCluster.id, kustoContributorRoleId, testApplicationOid)
+resource kustoPrincipalAssignment 'Microsoft.Kusto/clusters/principalAssignments@2024-04-13' = {
+  parent: kustoCluster
+  name: guid(kustoCluster.id, testApplicationOid)
   properties: {
     principalId: testApplicationOid
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', kustoContributorRoleId)
-    scope: kustoCluster.id
+    principalType: 'App'
+    role: 'AllDatabaseAdmin'
+    tenantId: tenantId
   }
 }
+
 
 @description('The KQL script to initialize the test data.')
 param initScript string = '.set-or-append ToDoList <| datatable(item: string) ["Hello World!"]'

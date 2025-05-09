@@ -21,6 +21,19 @@ public abstract class BaseTableCommand<
         command.AddOption(_tableOption);
     }
 
+    private static ArgumentBuilder<BaseTableArguments> CreateTableArgument() =>
+        ArgumentBuilder<BaseTableArguments>
+            .Create(ArgumentDefinitions.Kusto.Table.Name, ArgumentDefinitions.Kusto.Table.Description)
+            .WithValueAccessor(args => args.Table ?? string.Empty)
+            .WithIsRequired(true);
+
+
+    protected override void RegisterArguments()
+    {
+        base.RegisterArguments();
+        AddArgument(CreateTableArgument());
+    }
+
     protected override TArgs BindArguments(ParseResult parseResult)
     {
         var args = base.BindArguments(parseResult);

@@ -37,6 +37,15 @@ public sealed class QueryCommandTests
         yield return new object[] { "--cluster-uri https://mycluster.kusto.windows.net --database-name db1 --query \"StormEvents | take 1\"", true };
     }
 
+    [Fact]
+    public void Execute_ReturnsArguments()
+    {
+        var command = new QueryCommand(_logger);
+        var arguments = command.GetArguments();
+        
+        Assert.Equal(12, arguments!.Count());
+    }
+
     [Theory]
     [MemberData(nameof(QueryArgumentMatrix))]
     public async Task ExecuteAsync_ReturnsQueryResults(string cliArgs, bool useClusterUri)

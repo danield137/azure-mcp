@@ -42,7 +42,7 @@ public sealed class KustoService(
         string? tenant = null,
         RetryPolicyArguments? retryPolicy = null)
     {
-        ValidateRequiredParameters(subscriptionId);
+        ArgumentException.ThrowIfNullOrEmpty(subscriptionId, nameof(subscriptionId));
 
         // Create cache key
         var cacheKey = string.IsNullOrEmpty(tenant)
@@ -77,7 +77,7 @@ public sealed class KustoService(
             string? tenant = null,
             RetryPolicyArguments? retryPolicy = null)
     {
-        ValidateRequiredParameters(subscriptionId, clusterName);
+        ArgumentException.ThrowIfNullOrEmpty(subscriptionId, nameof(subscriptionId));
 
         var subscription = await _subscriptionService.GetSubscription(subscriptionId, tenant, retryPolicy);
 
@@ -100,11 +100,12 @@ public sealed class KustoService(
         AuthMethod.Credential,
         RetryPolicyArguments? retryPolicy = null)
     {
-        ValidateRequiredParameters(subscriptionId, clusterName);
+        ArgumentException.ThrowIfNullOrEmpty(subscriptionId, nameof(subscriptionId));
+        ArgumentException.ThrowIfNullOrEmpty(clusterName, nameof(clusterName));
 
         string clusterUri = await GetClusterUri(subscriptionId, clusterName, tenant, retryPolicy);
 
-        return await ListDatabases(clusterUri, clusterName, tenant, authMethod, retryPolicy);
+        return await ListDatabases(clusterUri, tenant, authMethod, retryPolicy);
     }
 
     public async Task<List<string>> ListDatabases(
@@ -113,10 +114,10 @@ public sealed class KustoService(
         AuthMethod? authMethod = AuthMethod.Credential,
         RetryPolicyArguments? retryPolicy = null)
     {
-        ValidateRequiredParameters(clusterUri);
+        ArgumentException.ThrowIfNullOrEmpty(clusterUri, nameof(clusterUri));
 
         var kcsb = await CreateKustoConnectionStringBuilder(
-            clusterUri,
+            clusterUri.TrimEnd('/'),
             authMethod,
             null,
             tenant);
@@ -146,7 +147,9 @@ public sealed class KustoService(
         AuthMethod? authMethod = AuthMethod.Credential,
         RetryPolicyArguments? retryPolicy = null)
     {
-        ValidateRequiredParameters(subscriptionId, clusterName, databaseName);
+        ArgumentException.ThrowIfNullOrEmpty(subscriptionId, nameof(subscriptionId));
+        ArgumentException.ThrowIfNullOrEmpty(clusterName, nameof(clusterName));
+        ArgumentException.ThrowIfNullOrEmpty(databaseName, nameof(databaseName));
 
         string clusterUri = await GetClusterUri(subscriptionId, clusterName, tenant, retryPolicy);
 
@@ -160,10 +163,11 @@ public sealed class KustoService(
         AuthMethod? authMethod = AuthMethod.Credential,
         RetryPolicyArguments? retryPolicy = null)
     {
-        ValidateRequiredParameters(clusterUri, databaseName);
+        ArgumentException.ThrowIfNullOrEmpty(clusterUri, nameof(clusterUri));
+        ArgumentException.ThrowIfNullOrEmpty(databaseName, nameof(databaseName));
 
         var kcsb = await CreateKustoConnectionStringBuilder(
-            clusterUri,
+            clusterUri.TrimEnd('/'),
             authMethod,
             null,
             tenant);
@@ -207,9 +211,11 @@ public sealed class KustoService(
         AuthMethod? authMethod = AuthMethod.Credential,
         RetryPolicyArguments? retryPolicy = null)
     {
-        ValidateRequiredParameters(clusterUri, databaseName, tableName);
+        ArgumentException.ThrowIfNullOrEmpty(tableName, nameof(tableName));
+        ArgumentException.ThrowIfNullOrEmpty(databaseName, nameof(databaseName));
+        ArgumentException.ThrowIfNullOrEmpty(clusterUri, nameof(clusterUri));
 
-        var kcsb = await CreateKustoConnectionStringBuilder(clusterUri, authMethod, null, tenant);
+        var kcsb = await CreateKustoConnectionStringBuilder(clusterUri.TrimEnd(), authMethod, null, tenant);
         var cslAdminProvider = await GetOrCreateCslAdminProvider(kcsb);
         var clientRequestProperties = CreateClientRequestProperties();
 
@@ -242,11 +248,16 @@ public sealed class KustoService(
             AuthMethod? authMethod = AuthMethod.Credential,
             RetryPolicyArguments? retryPolicy = null)
     {
-        ValidateRequiredParameters(subscriptionId, clusterName, databaseName, query);
+        ArgumentException.ThrowIfNullOrEmpty(subscriptionId, nameof(subscriptionId));
+        ArgumentException.ThrowIfNullOrEmpty(clusterName, nameof(clusterName));
+        ArgumentException.ThrowIfNullOrEmpty(databaseName, nameof(databaseName));
+        ArgumentException.ThrowIfNullOrEmpty(query, nameof(query));
+        
 
         string clusterUri = await GetClusterUri(subscriptionId, clusterName, tenant, retryPolicy);
 
-        return await QueryItems(clusterUri, databaseName, query, tenant, authMethod, retryPolicy);
+        var results = await QueryItems(clusterUri, databaseName, query, tenant, authMethod, retryPolicy);
+        return results;
     }
 
     public async Task<List<JsonElement>> QueryItems(
@@ -257,7 +268,9 @@ public sealed class KustoService(
         AuthMethod? authMethod = AuthMethod.Credential,
         RetryPolicyArguments? retryPolicy = null)
     {
-        ValidateRequiredParameters(clusterUri, databaseName, query);
+        ArgumentException.ThrowIfNullOrEmpty(clusterUri, nameof(clusterUri));
+        ArgumentException.ThrowIfNullOrEmpty(databaseName, nameof(databaseName));
+        ArgumentException.ThrowIfNullOrEmpty(query, nameof(query));
 
         var kcsb = await CreateKustoConnectionStringBuilder(
             clusterUri,

@@ -67,6 +67,7 @@ public abstract class BaseClusterCommand<
         var args = base.BindArguments(parseResult);
         args.ClusterUri = parseResult.GetValueForOption(_clusterUriOption);
         args.ClusterName = parseResult.GetValueForOption(_clusterNameOption);
+
         return args;
     }
 

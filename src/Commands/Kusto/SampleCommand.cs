@@ -1,9 +1,11 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+using System.CommandLine;
 using System.CommandLine.Parsing;
 using System.Text.Json;
 using AzureMcp.Arguments.Kusto;
+using AzureMcp.Models.Argument;
 using AzureMcp.Models.Command;
 using AzureMcp.Services.Interfaces;
 using Microsoft.Extensions.Logging;
@@ -11,9 +13,24 @@ using ModelContextProtocol.Server;
 
 namespace AzureMcp.Commands.Kusto;
 
-public sealed class SampleCommand(ILogger<SampleCommand> logger) : BaseSampleCommand<SampleArguments>
+public sealed class SampleCommand(ILogger<SampleCommand> logger) : BaseTableCommand<SampleArguments>
 {
     private readonly ILogger<SampleCommand> _logger = logger;
+
+    private readonly Option<int> _limitOption = ArgumentDefinitions.Kusto.Limit.ToOption();
+
+    protected override void RegisterOptions(Command command)
+    {
+        base.RegisterOptions(command);
+        command.AddOption(_limitOption);
+    }
+
+    protected override SampleArguments BindArguments(ParseResult parseResult)
+    {
+        var args = base.BindArguments(parseResult);
+        args.Limit = parseResult.GetValueForOption(_limitOption);
+        return args;
+    }
 
     protected override string GetCommandName() => "sample";
 

@@ -1,9 +1,11 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+using System.CommandLine;
 using System.CommandLine.Parsing;
 using System.Text.Json;
 using AzureMcp.Arguments.Kusto;
+using AzureMcp.Models.Argument;
 using AzureMcp.Models.Command;
 using AzureMcp.Services.Interfaces;
 using Microsoft.Extensions.Logging;
@@ -11,7 +13,7 @@ using ModelContextProtocol.Server;
 
 namespace AzureMcp.Commands.Kusto;
 
-public sealed class QueryCommand : BaseQueryCommand<QueryArguments>
+public sealed class QueryCommand : BaseDatabaseCommand<QueryArguments>
 {
     private readonly ILogger<QueryCommand> _logger;
 
@@ -20,12 +22,39 @@ public sealed class QueryCommand : BaseQueryCommand<QueryArguments>
         _logger = logger;
     }
 
+    private readonly Option<string> _queryOption = ArgumentDefinitions.Kusto.Query.ToOption();
+
+    protected override void RegisterOptions(Command command)
+    {
+        base.RegisterOptions(command);
+        command.AddOption(_queryOption);
+    }
+
+    protected override void RegisterArguments()
+    {
+        base.RegisterArguments();
+        AddArgument(CreateQueryArgument());
+    }
+
+    private static ArgumentBuilder<QueryArguments> CreateQueryArgument() =>
+        ArgumentBuilder<QueryArguments>
+            .Create(ArgumentDefinitions.Kusto.Query.Name, ArgumentDefinitions.Kusto.Query.Description)
+            .WithValueAccessor(args => args.Query ?? string.Empty)
+            .WithIsRequired(true);
+
+    protected override QueryArguments BindArguments(ParseResult parseResult)
+    {
+        var args = base.BindArguments(parseResult);
+        args.Query = parseResult.GetValueForOption(_queryOption);
+        return args;
+    }
+
     protected override string GetCommandName() => "query";
 
     protected override string GetCommandDescription() =>
         """
-        Execute a KQL against items in a Kusto cluster. Requires cluster-uri, database, and query.
-        Requires `cluster-uri` (or `cluster-name`), `database-name`, and `query`. 
+        Execute a KQL against items in a Kusto cluster.
+        Requires `cluster-uri` (or `cluster-name` and `subscription`), `database-name`, and `query`. 
         Results are returned as a JSON array of documents, for example: `[{'Column1': val1, 'Column2': val2}, ...]`.
         """;
 
@@ -76,5 +105,5 @@ public sealed class QueryCommand : BaseQueryCommand<QueryArguments>
         return context.Response;
     }
 
-    internal record QueryCommandResult(List<JsonElement> Results);
+    internal record QueryCommandResult(List<JsonElement> Items);
 }

@@ -23,7 +23,7 @@ public sealed class ClusterGetCommand : BaseClusterCommand<ClusterGetArguments>
 
     protected override string GetCommandDescription() =>
         """
-        Get details for a specific Kusto cluster. Requires `cluster-name` and `subscription`.
+        Get details for a specific Kusto cluster. Requires `subscription` and `cluster-name`.
         The response includes the `clusterUri` property for use in subsequent commands.
         """;
 

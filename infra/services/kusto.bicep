@@ -26,9 +26,6 @@ resource kustoCluster 'Microsoft.Kusto/clusters@2024-04-13' = {
   identity: {
     type: 'SystemAssigned'
   }
-  properties: {
-    enableStreamingIngest: true
-  }
 
   resource kustoDatabase 'databases' = {
     location: location

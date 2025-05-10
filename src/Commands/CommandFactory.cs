@@ -68,9 +68,11 @@ public class CommandFactory
 
     public IReadOnlyDictionary<string, IBaseCommand> AllCommands => _commandMap;
 
+
     private void RegisterCommandGroup()
     {
         // Register top-level command groups
+        RegisterBestPracticesCommand();
         RegisterCosmosCommands();
         RegisterKustoCommands();
         RegisterStorageCommands();
@@ -85,6 +87,20 @@ public class CommandFactory
         RegisterGroupCommands();
         RegisterMcpServerCommands();
         RegisterServiceBusCommands();
+    }
+
+    private void RegisterBestPracticesCommand()
+    {
+        // Register Azure Best Practices command at the root level
+        var bestPractices = new CommandGroup(
+            "bestpractices",
+            "Returns secure, production-grade Azure SDK best practices. Call this before generating Azure SDK code."
+        );
+        _rootGroup.AddSubGroup(bestPractices);
+        bestPractices.AddCommand(
+            "get",
+            new BestPractices.AzureBestPracticesGetCommand(GetLogger<BestPractices.AzureBestPracticesGetCommand>())
+        );
     }
 
     private void RegisterCosmosCommands()
@@ -331,12 +347,19 @@ public class CommandFactory
 
         var queue = new CommandGroup("queue", "Queue operations - Commands for using Azure Service Bus queues.");
         queue.AddCommand("peek", new ServiceBus.Queue.QueuePeekCommand());
+        queue.AddCommand("details", new ServiceBus.Queue.QueueDetailsCommand());
 
-        var topic = new CommandGroup("topic", "Topic and Subscription operations - Commands for using Azure Service Bus topics and subscriptions.");
-        topic.AddCommand("peek", new ServiceBus.Topic.SubscriptionPeekCommand());
+        var topic = new CommandGroup("topic", "Topic operations - Commands for using Azure Service Bus topics and subscriptions.");
+        topic.AddCommand("details", new ServiceBus.Topic.TopicDetailsCommand());
+
+        var subscription = new CommandGroup("subscription", "Subscription operations - Commands for using subscriptions within a Service Bus topic.");
+        subscription.AddCommand("peek", new ServiceBus.Topic.SubscriptionPeekCommand());
+        subscription.AddCommand("details", new ServiceBus.Topic.SubscriptionDetailsCommand());
 
         serviceBus.AddSubGroup(queue);
         serviceBus.AddSubGroup(topic);
+
+        topic.AddSubGroup(subscription);
     }
 
     private void ConfigureCommands(CommandGroup group)

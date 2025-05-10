@@ -77,6 +77,10 @@
 	<PackageReference Include="Azure.Search.Documents" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\azure-best-practices.txt" />
+  </ItemGroup>
+
   <!-- Runs before every dotnet build -->
   <Target Name="InstallGitHooks" BeforeTargets="BeforeBuild">
     <Message Text="Installing Git hooks..." Importance="high" />

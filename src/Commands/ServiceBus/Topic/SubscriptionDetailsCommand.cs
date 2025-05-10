@@ -4,35 +4,31 @@
 using System.CommandLine;
 using System.CommandLine.Parsing;
 using Azure.Messaging.ServiceBus;
-using AzureMcp.Arguments.ServiceBus.Subscription;
+using AzureMcp.Arguments.ServiceBus.Topic;
 using AzureMcp.Models.Argument;
 using AzureMcp.Models.Command;
+using AzureMcp.Models.ServiceBus;
 using AzureMcp.Services.Interfaces;
 using ModelContextProtocol.Server;
 
 namespace AzureMcp.Commands.ServiceBus.Topic;
 
-public sealed class SubscriptionPeekCommand : SubscriptionCommand<SubscriptionPeekArguments>
+public sealed class SubscriptionDetailsCommand : SubscriptionCommand<SubscriptionDetailsArguments>
 {
+    private readonly Option<string> _namespaceOption = ArgumentDefinitions.ServiceBus.Namespace.ToOption();
     private readonly Option<string> _topicOption = ArgumentDefinitions.ServiceBus.Topic.ToOption();
     private readonly Option<string> _subscriptionNameOption = ArgumentDefinitions.ServiceBus.Subscription.ToOption();
-    private readonly Option<int> _maxMessagesOption = ArgumentDefinitions.ServiceBus.MaxMessages.ToOption();
-    private readonly Option<string> _namespaceOption = ArgumentDefinitions.ServiceBus.Namespace.ToOption();
 
-    protected override string GetCommandName() => "peek";
+    protected override string GetCommandName() => "details";
 
     protected override string GetCommandDescription() =>
         """
-        Peek messages from a Service Bus subscription without removing them.  Message browsing, or peeking, enables a
-        Service Bus client to enumerate all messages in a subscription, for diagnostic and debugging purposes.
-        The peek operation returns active, locked, and deferred messages in the subscription.
-
-        Returns message content, properties, and metadata.  Messages remain in the subscription after peeking.
+        Get details about a Service Bus subscription. Returns subscription runtime properties including message counts, delivery settings, and other metadata.
 
         Required arguments:
         - namespace: Service Bus namespace name. (This is usually in the form <namespace>.servicebus.windows.net)
         - topic-name: Topic name containing the subscription
-        - subscription-name: Subscription name to peek messages from
+        - subscription-name: Name of the subscription to get details for
         """;
 
     protected override void RegisterOptions(Command command)
@@ -41,7 +37,6 @@ public sealed class SubscriptionPeekCommand : SubscriptionCommand<SubscriptionPe
         command.AddOption(_namespaceOption);
         command.AddOption(_topicOption);
         command.AddOption(_subscriptionNameOption);
-        command.AddOption(_maxMessagesOption);
     }
 
     protected override void RegisterArguments()
@@ -50,16 +45,14 @@ public sealed class SubscriptionPeekCommand : SubscriptionCommand<SubscriptionPe
         AddArgument(CreateSubscriptionNameArgument());
         AddArgument(CreateTopicNameArgument());
         AddArgument(CreateNamespaceArgument());
-        AddArgument(CreateMaxMessageArgument());
     }
 
-    protected override SubscriptionPeekArguments BindArguments(ParseResult parseResult)
+    protected override SubscriptionDetailsArguments BindArguments(ParseResult parseResult)
     {
         var args = base.BindArguments(parseResult);
-        args.SubscriptionName = parseResult.GetValueForOption(_subscriptionNameOption);
-        args.TopicName = parseResult.GetValueForOption(_topicOption);
         args.Namespace = parseResult.GetValueForOption(_namespaceOption);
-        args.MaxMessages = parseResult.GetValueForOption(_maxMessagesOption);
+        args.TopicName = parseResult.GetValueForOption(_topicOption);
+        args.SubscriptionName = parseResult.GetValueForOption(_subscriptionNameOption);
         return args;
     }
 
@@ -76,19 +69,16 @@ public sealed class SubscriptionPeekCommand : SubscriptionCommand<SubscriptionPe
             }
 
             var service = context.GetService<IServiceBusService>();
-            var messages = await service.PeekSubscriptionMessages(
+            var details = await service.GetSubscriptionDetails(
                 args.Namespace!,
                 args.TopicName!,
                 args.SubscriptionName!,
-                args.MaxMessages ?? 1,
                 args.Tenant,
                 args.RetryPolicy);
 
-            var peekedMessages = messages ?? new List<ServiceBusReceivedMessage>();
-
             context.Response.Results = ResponseResult.Create(
-                new SubscriptionPeekCommandResult(peekedMessages),
-                ServiceBusJsonContext.Default.SubscriptionPeekCommandResult);
+                new SubscriptionDetailsCommandResult(details),
+                ServiceBusJsonContext.Default.SubscriptionDetailsCommandResult);
         }
         catch (Exception ex)
         {
@@ -101,7 +91,7 @@ public sealed class SubscriptionPeekCommand : SubscriptionCommand<SubscriptionPe
     protected override string GetErrorMessage(Exception ex) => ex switch
     {
         ServiceBusException exception when exception.Reason == ServiceBusFailureReason.MessagingEntityNotFound =>
-            $"Subscription not found. Please check the topic and subscription name and try again.",
+            $"Topic or subscription not found. Please check the topic and subscription names and try again.",
         _ => base.GetErrorMessage(ex)
     };
 
@@ -111,37 +101,29 @@ public sealed class SubscriptionPeekCommand : SubscriptionCommand<SubscriptionPe
         _ => base.GetStatusCode(ex)
     };
 
-    private static ArgumentBuilder<SubscriptionPeekArguments> CreateTopicNameArgument()
+    private static ArgumentBuilder<SubscriptionDetailsArguments> CreateTopicNameArgument()
     {
-        return ArgumentBuilder<SubscriptionPeekArguments>
+        return ArgumentBuilder<SubscriptionDetailsArguments>
             .Create(ArgumentDefinitions.ServiceBus.Topic.Name, ArgumentDefinitions.ServiceBus.Topic.Description)
             .WithValueAccessor(args => args.TopicName ?? string.Empty)
             .WithIsRequired(true);
     }
 
-    private static ArgumentBuilder<SubscriptionPeekArguments> CreateSubscriptionNameArgument()
+    private static ArgumentBuilder<SubscriptionDetailsArguments> CreateSubscriptionNameArgument()
     {
-        return ArgumentBuilder<SubscriptionPeekArguments>
+        return ArgumentBuilder<SubscriptionDetailsArguments>
             .Create(ArgumentDefinitions.ServiceBus.Subscription.Name, ArgumentDefinitions.ServiceBus.Subscription.Description)
             .WithValueAccessor(args => args.SubscriptionName ?? string.Empty)
             .WithIsRequired(true);
     }
 
-    private static ArgumentBuilder<SubscriptionPeekArguments> CreateNamespaceArgument()
+    private static ArgumentBuilder<SubscriptionDetailsArguments> CreateNamespaceArgument()
     {
-        return ArgumentBuilder<SubscriptionPeekArguments>
+        return ArgumentBuilder<SubscriptionDetailsArguments>
             .Create(ArgumentDefinitions.ServiceBus.Namespace.Name, ArgumentDefinitions.ServiceBus.Namespace.Description)
             .WithValueAccessor(args => args.Namespace ?? string.Empty)
             .WithIsRequired(true);
     }
 
-    private static ArgumentBuilder<SubscriptionPeekArguments> CreateMaxMessageArgument()
-    {
-        return ArgumentBuilder<SubscriptionPeekArguments>
-            .Create(ArgumentDefinitions.ServiceBus.MaxMessages.Name, ArgumentDefinitions.ServiceBus.MaxMessages.Description)
-            .WithValueAccessor(args => args.MaxMessages?.ToString() ?? "1")
-            .WithIsRequired(false);
-    }
-
-    internal record SubscriptionPeekCommandResult(List<ServiceBusReceivedMessage> Messages);
+    internal record SubscriptionDetailsCommandResult(SubscriptionDetails SubscriptionDetails);
 }
